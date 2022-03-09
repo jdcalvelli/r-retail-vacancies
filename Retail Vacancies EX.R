@@ -5,6 +5,10 @@ API_KEY <- Sys.getenv("GOOGLE_MAPS_RV_API_KEY")
 library(httr)
 library(jsonlite)
 library(tidyverse)
+library(leaflet)
+library(leaflet.extras)
+library(sf)
+library(htmltools)
 
 # ZIP CODE TO BOUNDING BOX API CALL
 # zip code for first api call to determine bounding box
@@ -55,7 +59,7 @@ for(coordinate in coordinatesVector) {
   establishmentsAPICall <- GET('https://maps.googleapis.com/maps/api/place/nearbysearch/json',
                                query = list(keyword = keyWord,
                                             location = coordinate,
-                                            radius = 2500,
+                                            radius = 1000,
                                             key = API_KEY))
   establishmentsAPICallResults <- fromJSON(rawToChar(establishmentsAPICall$content), 
                                            flatten = TRUE)$results
@@ -68,7 +72,6 @@ for(coordinate in coordinatesVector) {
 }
 
 # FILTERING ESTABLISHMENTSDF TO ONLY TEMP/PERM CLOSED
-establishmentsDF
 
 # keep only the temp/perm closed establishments
 ESTTEMP <- filter(establishmentsDF, business_status == 'CLOSED_TEMPORARILY' 
@@ -76,14 +79,27 @@ ESTTEMP <- filter(establishmentsDF, business_status == 'CLOSED_TEMPORARILY'
 # remove any and all duplicates
 ESTTEMP <- distinct(ESTTEMP)
 
-#MAP MAKING
+# MAP MAKING
 
+leaf <- leaflet(data = ESTTEMP) %>%
+  setView(lng = zipCodeAPICallResults$geometry$location$lng,
+          lat = zipCodeAPICallResults$geometry$location$lat,
+          zoom = 12) %>%
+  addTiles() %>% 
+  addMarkers(lng = ~geometry.location.lng,
+             lat = ~geometry.location.lat,
+             popup = sprintf(
+               '<h3> %s </h3>
+               <p> %s </p>',
+               ESTTEMP$name,
+               ESTTEMP$business_status) %>% lapply(htmltools::HTML)
+             )
+leaf
 
 
 # TO-DO
-# 3. add filtration to only look at the closed temporarily or permanently - after api call
-# 4. put it on a map of some kind?
 # 1. add in the next page token stuff?
 # 2. run it with a lot more places - up the grid
+# 3. run it with multiple keywords - like a predetermined list of keywords
 # 5. maybe turn it into a shiny app? user can input a zip code and keyword
 # 6. cron job to pull every month, save old data set in old data set, and new data set in new and see what the difference is?
