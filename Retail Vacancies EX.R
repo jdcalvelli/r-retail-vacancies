@@ -6,7 +6,11 @@ library(httr)
 library(jsonlite)
 library(tidyverse)
 
+# ZIP CODE TO BOUNDING BOX API CALL
+# zip code for first api call to determine bounding box
 zipCode <- 60623
+# keyWord for second api calls to find temp/perm closed places
+keyWord <- 'cafe'
 
 ## get bounding box based on zip code - text search
 zipCodeAPICall <- GET('https://maps.googleapis.com/maps/api/place/textsearch/json',
@@ -21,6 +25,7 @@ boundingBox <- list(NE_Lat = zipCodeAPICallResults$geometry$viewport$northeast$l
                     SW_Lng = zipCodeAPICallResults$geometry$viewport$southwest$lng)
 
 
+# BOUNDING BOX TO COORDINATES FCN
 ## create set of coordinates based on the bounding box
 DESIRED_GRID_LENGTH = 3
 INTERMEDIATE_GRID_LENGTH = DESIRED_GRID_LENGTH - 1
@@ -39,8 +44,7 @@ while(lat <= boundingBox$NE_Lat) {
   lat = lat + LAT_STEP_SIZE
 }
 
-coordinatesVector
-
+# COORDINATES + KEYWORD TO BUSINESSES API CALL
 # run a search for each coordinate and combine results
 # first we need to create a data frame to join all the others to
 establishmentsDF <- data.frame()
@@ -49,7 +53,8 @@ establishmentsDF <- data.frame()
 # for in R is like forEach array method in js
 for(coordinate in coordinatesVector) {
   establishmentsAPICall <- GET('https://maps.googleapis.com/maps/api/place/nearbysearch/json',
-                               query = list(location = coordinate,
+                               query = list(keyword = keyWord,
+                                            location = coordinate,
                                             radius = 2500,
                                             key = API_KEY))
   establishmentsAPICallResults <- fromJSON(rawToChar(establishmentsAPICall$content), 
@@ -62,10 +67,23 @@ for(coordinate in coordinatesVector) {
   establishmentsDF <- rbind(establishmentsDF, establishmentsFiltered)
 }
 
+# FILTERING ESTABLISHMENTSDF TO ONLY TEMP/PERM CLOSED
+establishmentsDF
+
+# keep only the temp/perm closed establishments
+ESTTEMP <- filter(establishmentsDF, business_status == 'CLOSED_TEMPORARILY' 
+                  | business_status == 'CLOSED_PERMANENTLY')
+# remove any and all duplicates
+ESTTEMP <- distinct(ESTTEMP)
+
+#MAP MAKING
+
+
 
 # TO-DO
+# 3. add filtration to only look at the closed temporarily or permanently - after api call
+# 4. put it on a map of some kind?
 # 1. add in the next page token stuff?
 # 2. run it with a lot more places - up the grid
-# 3. add filtration to only look at the closed temporarily or permanently
-# 4. put it on a map of some kind?
-# 5. maybe turn it into a shiny app? user can input a zip code (and maybe a type?)
+# 5. maybe turn it into a shiny app? user can input a zip code and keyword
+# 6. cron job to pull every month, save old data set in old data set, and new data set in new and see what the difference is?
