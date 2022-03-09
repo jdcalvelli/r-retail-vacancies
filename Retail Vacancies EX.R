@@ -5,17 +5,22 @@ API_KEY <- Sys.getenv("GOOGLE_MAPS_RV_API_KEY")
 library(httr)
 library(jsonlite)
 library(tidyverse)
+library(data.table)
+
 library(leaflet)
 library(leaflet.extras)
 library(sf)
 library(htmltools)
 
-# ZIP CODE TO BOUNDING BOX API CALL
+# UX VARS
 # zip code for first api call to determine bounding box
 zipCode <- 60623
 # keyWord for second api calls to find temp/perm closed places
-keyWord <- 'cafe'
+keyWord <- 'store'
+# radius for second api calls to find temp/perm closed places
+searchingRadius <- 1000
 
+# ZIP CODE TO BOUNDING BOX API CALL
 ## get bounding box based on zip code - text search
 zipCodeAPICall <- GET('https://maps.googleapis.com/maps/api/place/textsearch/json',
                       query = list(query = zipCode,
@@ -51,7 +56,7 @@ while(lat <= boundingBox$NE_Lat) {
 # COORDINATES + KEYWORD TO BUSINESSES API CALL
 # run a search for each coordinate and combine results
 # first we need to create a data frame to join all the others to
-establishmentsDF <- data.frame()
+establishmentsAppended <- data.table()
 
 # then we need to make the queries and join them to the final dataframe WO PAGES
 # for in R is like forEach array method in js
@@ -59,23 +64,19 @@ for(coordinate in coordinatesVector) {
   establishmentsAPICall <- GET('https://maps.googleapis.com/maps/api/place/nearbysearch/json',
                                query = list(keyword = keyWord,
                                             location = coordinate,
-                                            radius = 1000,
+                                            radius = searchingRadius,
                                             key = API_KEY))
-  establishmentsAPICallResults <- fromJSON(rawToChar(establishmentsAPICall$content), 
+  establishmentsAPICallResults <- fromJSON(rawToChar(establishmentsAPICall$content),
                                            flatten = TRUE)$results
+  setDT(establishmentsAPICallResults)
   
-  establishmentsFiltered <- select(establishmentsAPICallResults,
-                                   place_id, name, business_status, 
-                                   geometry.location.lat, geometry.location.lng)
-  
-  establishmentsDF <- rbind(establishmentsDF, establishmentsFiltered)
+  establishmentsAppended <- rbind(establishmentsAppended, establishmentsAPICallResults, fill=TRUE)
 }
 
 # FILTERING ESTABLISHMENTSDF TO ONLY TEMP/PERM CLOSED
 
 # keep only the temp/perm closed establishments
-ESTTEMP <- filter(establishmentsDF, business_status == 'CLOSED_TEMPORARILY' 
-                  | business_status == 'CLOSED_PERMANENTLY')
+ESTTEMP <- filter(establishmentsAppended, business_status == 'CLOSED_TEMPORARILY')
 # remove any and all duplicates
 ESTTEMP <- distinct(ESTTEMP)
 
@@ -99,7 +100,7 @@ leaf
 
 # TO-DO
 # 1. add in the next page token stuff?
-# 2. run it with a lot more places - up the grid
+# 2. run it with a lot more places - up the grid - RUNNING INTO THE SELECT DOESNT WORK WITH LISTS ISSUE?
 # 3. run it with multiple keywords - like a predetermined list of keywords
 # 5. maybe turn it into a shiny app? user can input a zip code and keyword
 # 6. cron job to pull every month, save old data set in old data set, and new data set in new and see what the difference is?
