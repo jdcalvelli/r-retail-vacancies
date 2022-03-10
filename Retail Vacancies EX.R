@@ -94,9 +94,3 @@ leaf <- leaflet(data = ESTTEMP) %>%
                ESTTEMP$business_status) %>% lapply(htmltools::HTML)
              )
 leaf
-
-
-# TO-DO
-# 3. run it with multiple keywords - like a predetermined list of keywords
-# 5. maybe turn it into a shiny app? user can input a zip code and keyword
-# 6. cron job to pull every month, save old data set in old data set, and new data set in new and see what the difference is?
