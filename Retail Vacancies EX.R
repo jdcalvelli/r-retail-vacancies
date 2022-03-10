@@ -8,15 +8,13 @@ library(tidyverse)
 library(data.table)
 
 library(leaflet)
-library(leaflet.extras)
-library(sf)
 library(htmltools)
 
 # UX VARS
 # zip code for first api call to determine bounding box
 zipCode <- 60623
 # keyWord for second api calls to find temp/perm closed places
-keyWord <- 'store'
+keyWord <- 'clothes'
 # radius for second api calls to find temp/perm closed places
 searchingRadius <- 1000
 
@@ -99,8 +97,6 @@ leaf
 
 
 # TO-DO
-# 1. add in the next page token stuff?
-# 2. run it with a lot more places - up the grid - RUNNING INTO THE SELECT DOESNT WORK WITH LISTS ISSUE?
 # 3. run it with multiple keywords - like a predetermined list of keywords
 # 5. maybe turn it into a shiny app? user can input a zip code and keyword
 # 6. cron job to pull every month, save old data set in old data set, and new data set in new and see what the difference is?
