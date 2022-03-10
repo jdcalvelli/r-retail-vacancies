@@ -30,8 +30,8 @@ ui <- fluidPage(
     # Sidebar with a slider input for number of bins 
     sidebarLayout(
         sidebarPanel(
-          textInput(inputId = 'zipCode', label = 'Zip Code', value = 'EX: 60615'),
-          textInput(inputId = 'keyWord', label = 'Key Word', value = 'EX: cafe'),
+          textInput(inputId = 'zipCode', label = 'Zip Code', value = '60623'),
+          textInput(inputId = 'keyWord', label = 'Key Word', value = 'clothing'),
           sliderInput(inputId = 'searchingRadius', label = 'Searching Radius', 
                       min = 500, max = 2500, step = 500, value = 1500),
           actionButton(inputId = 'submit', label = 'Show Vacant Buildings')
@@ -48,7 +48,7 @@ ui <- fluidPage(
 server <- function(input, output) {
   
   #saves a function you have to call in a render elsewhere
-  re <- eventReactive(input$submit, {
+  re <- eventReactive(input$submit, withProgress(message = 'Calculating Map', value = 0, {
     # ZIP CODE TO BOUNDING BOX API CALL
     ## get bounding box based on zip code - text search
     zipCodeAPICall <- GET('https://maps.googleapis.com/maps/api/place/textsearch/json',
@@ -100,6 +100,8 @@ server <- function(input, output) {
       setDT(establishmentsAPICallResults)
       
       establishmentsAppended <- rbind(establishmentsAppended, establishmentsAPICallResults, fill=TRUE)
+    
+      incProgress(amount = 1/length(coordinatesVector))
     }
     
     # FILTERING ESTABLISHMENTSDF TO ONLY TEMP/PERM CLOSED
@@ -125,7 +127,7 @@ server <- function(input, output) {
                    ESTTEMP$business_status) %>% lapply(htmltools::HTML)
       )
     leaf
-  })
+  }))
   
   #actually calling the render and saving it to the output
   output$leaf <- renderLeaflet({
