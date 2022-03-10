@@ -39,18 +39,22 @@ ui <- fluidPage(
 
         # Show a plot of the generated distribution
         mainPanel(
-           leafletOutput('leaf')
+           textOutput('leaf')
         )
     )
 )
 
 # Define server logic required to draw a histogram
 server <- function(input, output) {
-
-  output$leaf <- eventReactive(input$submit, {
-    print(input$zipCode)
-    print(input$keyWord)
-    print(input$searchingRadius)
+  
+  #saves a function you have to call in a render elsewhere
+  re <- eventReactive(input$submit, {
+    paste(input$zipCode, input$keyWord, input$searchingRadius)
+  })
+  
+  #actually calling the render and saving it to the output
+  output$leaf <- renderText({
+    re()
   })
   
 }
