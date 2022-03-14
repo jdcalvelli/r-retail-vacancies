@@ -14,9 +14,9 @@ library(htmltools)
 # zip code for first api call to determine bounding box
 zipCode <- 60623
 # keyWord for second api calls to find temp/perm closed places
-keyWord <- 'clothes'
+keyWord <- 'cafe'
 # radius for second api calls to find temp/perm closed places
-searchingRadius <- 1000
+searchingRadius <- 2500
 
 # ZIP CODE TO BOUNDING BOX API CALL
 ## get bounding box based on zip code - text search
@@ -81,16 +81,16 @@ ESTTEMP <- distinct(ESTTEMP)
 # MAP MAKING
 
 leaf <- leaflet(data = ESTTEMP) %>%
-  setView(lng = zipCodeAPICallResults$geometry$location$lng,
-          lat = zipCodeAPICallResults$geometry$location$lat,
-          zoom = 12) %>%
-  addTiles() %>% 
-  addMarkers(lng = ~geometry.location.lng,
-             lat = ~geometry.location.lat,
-             popup = sprintf(
-               '<h3> %s </h3>
-               <p> %s </p>',
-               ESTTEMP$name,
-               ESTTEMP$business_status) %>% lapply(htmltools::HTML)
-             )
+        addTiles() %>%
+        addCircleMarkers(lat = ESTTEMP$geometry.location.lat, 
+                        lng = ESTTEMP$geometry.location.lng,
+                        popup = sprintf('<h3> %s </h3>
+                                        <p> %s </p>
+                                        <p> %s </p>',
+                                        ESTTEMP$name,
+                                        ESTTEMP$vicinity,
+                                        ESTTEMP$business_status) %>% lapply(HTML)) %>%
+        setView(lng = zipCodeAPICallResults$geometry$location$lng,
+                lat = zipCodeAPICallResults$geometry$location$lat,
+                zoom = 12)
 leaf

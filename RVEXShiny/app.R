@@ -105,7 +105,7 @@ server <- function(input, output) {
     }
     
     # FILTERING ESTABLISHMENTSDF TO ONLY TEMP/PERM CLOSED
-    
+
     # keep only the temp/perm closed establishments
     ESTTEMP <- filter(establishmentsAppended, business_status == 'CLOSED_TEMPORARILY')
     # remove any and all duplicates
@@ -114,18 +114,18 @@ server <- function(input, output) {
     # MAP MAKING
     
     leaf <- leaflet(data = ESTTEMP) %>%
+      addTiles() %>%
+      addCircleMarkers(lat = ESTTEMP$geometry.location.lat, 
+                       lng = ESTTEMP$geometry.location.lng,
+                       popup = sprintf('<h3> %s </h3>
+                                        <p> %s </p>
+                                        <p> %s </p>',
+                                       ESTTEMP$name,
+                                       ESTTEMP$vicinity,
+                                       ESTTEMP$business_status) %>% lapply(HTML)) %>%
       setView(lng = zipCodeAPICallResults$geometry$location$lng,
               lat = zipCodeAPICallResults$geometry$location$lat,
-              zoom = 12) %>%
-      addTiles() %>% 
-      addMarkers(lng = ~geometry.location.lng,
-                 lat = ~geometry.location.lat,
-                 popup = sprintf(
-                   '<h3> %s </h3>
-               <p> %s </p>',
-                   ESTTEMP$name,
-                   ESTTEMP$business_status) %>% lapply(htmltools::HTML)
-      )
+              zoom = 12)
     leaf
   }))
   
